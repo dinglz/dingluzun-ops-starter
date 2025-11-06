@@ -1,0 +1,49 @@
+
+#zabbix-agent安装剧本
+- name: Install and Configure Zabbix Agent2 on all hosts
+  hosts: all
+  become: yes
+  vars:
+    zabbix_repo_url: "https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/6.0/rhel/7/x86_64/zabbix-release-latest.el7.noarch.rpm"
+    zabbix_agent2_conf_src: "/etc/zabbix/zabbix_agent2.conf"  # 控制端本地配置文件路径
+    zabbix_agent2_conf_dest: "/etc/zabbix/zabbix_agent2.conf" # 目标主机配置文件路径
+
+  tasks:
+    - name: Install Zabbix repository (via清华镜像)
+      ansible.builtin.yum:
+        name: "{{ zabbix_repo_url }}"
+        state: present
+
+    - name: Replace default Zabbix repo URL with TUNA mirror
+      ansible.builtin.replace:
+        path: /etc/yum.repos.d/zabbix.repo
+        regexp: 'https://repo.zabbix.com/zabbix/'
+        replace: 'https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/'
+        backup: yes
+
+    - name: Install zabbix-agent2
+      ansible.builtin.yum:
+        name: zabbix-agent2
+        state: present
+        update_cache: yes
+
+    - name: Copy zabbix_agent2 configuration file
+      ansible.builtin.copy:
+        src: "{{ zabbix_agent2_conf_src }}"
+        dest: "{{ zabbix_agent2_conf_dest }}"
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart zabbix-agent2
+
+    - name: Ensure zabbix-agent2 is started and enabled at boot
+      ansible.builtin.systemd:
+        name: zabbix-agent2
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: restart zabbix-agent2
+      ansible.builtin.systemd:
+        name: zabbix-agent2
+        state: restarted
