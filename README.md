@@ -11,4 +11,3 @@ zabbix-agent 安装剧本
 
 ## 监控与告警
 1. **zabbix_install.md**: 详细步骤描述 Zabbix 监控系统的安装过程。
-2. **alerts_config_demo.png**: 展示如何配置 Zabbix 告警规则。
